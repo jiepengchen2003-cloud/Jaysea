@@ -1,0 +1,13 @@
+# Render.com 一鍵部署設定（Blueprint）
+services:
+  - type: web
+    name: feibiao-terminal
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: FINNHUB_KEY
+        sync: false   # 部署時在 Render 後台手動填入你的金鑰
+      - key: SYMBOLS
+        value: SPY,QQQ,DIA,ALAB,DOCN,RMBS,CRDO,AKAM,TWLO,MDB,MP,CRML

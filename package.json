@@ -1,0 +1,17 @@
+{
+  "name": "feibiao-terminal",
+  "version": "1.0.0",
+  "description": "飆股 TERMINAL — 美股即時動能分析終端機（Finnhub WebSocket 即時串流）",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
+  }
+}

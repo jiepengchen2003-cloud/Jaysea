@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>飆股終端機 · LIVE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#080b11; --panel:#0d141d; --panel2:#0b1017; --border:#1c2836; --border2:#26374a;
+    --ink:#c9d6e5; --muted:#61748c; --dim:#3f4f63;
+    --amber:#ffb000; --amber2:#ffca4d; --cyan:#39c6e6;
+    --up:#26d07c; --down:#ff4d5e; --flat:#8a97a8;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --cond:"IBM Plex Sans Condensed","JetBrains Mono",sans-serif;
+    --gap:8px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:12.5px;line-height:1.45;
+    -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;
+    background-image:radial-gradient(1200px 600px at 80% -10%,rgba(255,176,0,.05),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(57,198,230,.05),transparent 60%)}
+  .up{color:var(--up)} .down{color:var(--down)} .amber{color:var(--amber)} .cyan{color:var(--cyan)} .muted{color:var(--muted)}
+  #app{display:flex;flex-direction:column;min-height:100%}
+  .wrap{width:100%;max-width:1500px;margin:0 auto;padding:0 12px}
+  .topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:linear-gradient(180deg,#0b131d,#0a0f16);border-bottom:1px solid var(--border2)}
+  .topbar .row{display:flex;align-items:center;gap:14px;padding:8px 0;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:8px;font-family:var(--cond);letter-spacing:.5px}
+  .brand b{color:var(--amber);font-weight:700;font-size:16px;letter-spacing:1px}
+  .brand .sub{color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:2px}
+  .spacer{flex:1}
+  .stat{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px}
+  .led{width:7px;height:7px;border-radius:50%;background:var(--dim)}
+  .led.on{background:var(--up);box-shadow:0 0 8px var(--up)} .led.warn{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+  #clock{color:var(--ink)}
+  .fkeys{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--panel2)}
+  .fk{flex:0 0 auto;padding:7px 12px;background:transparent;border:0;border-right:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:11px;cursor:pointer;white-space:nowrap}
+  .fk b{color:var(--amber);margin-right:6px}
+  .fk:hover{background:#111a26;color:var(--ink)}
+  .fk.active{background:#13202e;color:var(--ink);box-shadow:inset 0 -2px 0 var(--amber)}
+  .tape{overflow:hidden;border-bottom:1px solid var(--border);background:#070a0f;white-space:nowrap}
+  .tape .track{display:inline-block;padding:6px 0;animation:scroll 48s linear infinite}
+  .tape:hover .track{animation-play-state:paused}
+  .tk{display:inline-flex;gap:7px;padding:0 18px;border-right:1px solid var(--border);font-size:11.5px}
+  .tk .sym{color:var(--ink)}
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @media (prefers-reduced-motion:reduce){.tape .track{animation:none}}
+  .flash-up{animation:fu .6s ease-out} .flash-dn{animation:fd .6s ease-out}
+  @keyframes fu{0%{background:rgba(38,208,124,.35)}100%{background:transparent}}
+  @keyframes fd{0%{background:rgba(255,77,94,.35)}100%{background:transparent}}
+  main{padding:12px 0 96px}
+  .grid{display:grid;grid-template-columns:1.1fr 1.5fr 1.1fr;gap:var(--gap)}
+  @media(max-width:1080px){.grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:720px){.grid{grid-template-columns:1fr}}
+  .col{display:flex;flex-direction:column;gap:var(--gap);min-width:0}
+  .panel{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:4px;overflow:hidden}
+  .phead{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--border);background:#0c141d}
+  .phead .dot{width:6px;height:6px;background:var(--amber);border-radius:1px;box-shadow:0 0 6px var(--amber)}
+  .phead h2{margin:0;font-family:var(--cond);font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase}
+  .phead .tag{margin-left:auto;font-size:9.5px;color:var(--muted);letter-spacing:1px}
+  .pbody{padding:8px 10px}.pbody.tight{padding:2px 0}
+  .idx{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-bottom:1px solid #101a25}
+  .idx:last-child{border-bottom:0}
+  .idx .nm{color:var(--muted);font-size:11px}.idx .vv{text-align:right}
+  .idx .px{font-size:14px}.idx .ch{font-size:11px}
+  .kv{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:11.5px}
+  .kv .k{color:var(--muted)}.kv .v{text-align:right}
+  .divider{height:1px;background:var(--border);margin:8px 0}
+  table{width:100%;border-collapse:collapse;font-size:11.5px}
+  thead th{text-align:right;color:var(--muted);font-weight:500;font-size:10px;letter-spacing:.6px;text-transform:uppercase;padding:6px 8px;background:#0c141d;border-bottom:1px solid var(--border)}
+  thead th:first-child,tbody td:first-child{text-align:left}
+  tbody td{padding:6px 8px;text-align:right;border-bottom:1px solid #101a25;white-space:nowrap}
+  tbody tr:hover{background:#0f1a26}
+  .sym b{color:var(--amber2);font-weight:600}.sym small{display:block;color:var(--muted);font-size:9.5px}
+  .spark{width:64px;height:22px;vertical-align:middle}
+  .badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9.5px;border:1px solid transparent}
+  .b-q{color:var(--up);border-color:#194b34;background:#0c1c15}
+  .b-s{color:var(--amber);border-color:#4a3a12;background:#1c1608}
+  .b-j{color:var(--down);border-color:#4a1c22;background:#1c0d10}
+  .theme-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #101a25;font-size:11px}
+  .theme-row:last-child{border-bottom:0}.theme-row .lead{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .agrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border)}
+  .ag{background:var(--panel);padding:7px 9px;display:flex;flex-direction:column;gap:2px}
+  .ag .an{display:flex;align-items:center;gap:6px;font-size:11px}.ag .as{font-size:9.5px;color:var(--muted)}
+  .mini-led{width:6px;height:6px;border-radius:50%;background:var(--up);box-shadow:0 0 6px var(--up);flex:0 0 auto}
+  .mini-led.idle{background:var(--dim);box-shadow:none}.mini-led.warn{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+  .alert{display:flex;gap:8px;padding:7px 10px;border-bottom:1px solid #101a25;font-size:11px;align-items:flex-start}
+  .alert:last-child{border-bottom:0}.alert .t{color:var(--dim);font-size:10px;flex:0 0 42px}.alert .m{flex:1;min-width:0}
+  .sev{width:3px;align-self:stretch;border-radius:2px;background:var(--muted)}
+  .sev.hi{background:var(--down)}.sev.md{background:var(--amber)}.sev.lo{background:var(--cyan)}
+  .cmdbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#070a0f;border-top:1px solid var(--border2);padding:0 0 env(safe-area-inset-bottom,0px)}
+  .cmdline{display:flex;align-items:center;gap:8px;max-width:1500px;margin:0 auto;padding:9px 12px}
+  .cmdline .ps{color:var(--amber);font-weight:600}
+  .cmdline input{flex:1;background:transparent;border:0;color:var(--ink);font-family:var(--mono);font-size:12.5px;outline:none}
+  .cmdline input::placeholder{color:var(--dim)}
+  .cur{width:8px;height:15px;background:var(--amber);animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .cmdhint{max-width:1500px;margin:0 auto;padding:0 12px 8px;color:var(--dim);font-size:10px}.cmdhint b{color:var(--muted)}
+  #console{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:29;width:min(760px,94vw);max-height:52vh;overflow:auto;background:#0a121b;border:1px solid var(--border2);border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.6);padding:10px 12px;font-size:11.5px}
+  #console .cl{color:var(--muted);white-space:pre-wrap;word-break:break-word}#console .ch{color:var(--amber);margin-bottom:4px}
+  #console .close{position:absolute;top:6px;right:10px;color:var(--muted);cursor:pointer}
+  .note{color:var(--dim);font-size:10px;line-height:1.6;padding:10px 2px 0}
+  .hidden{display:none!important}
+  :focus-visible{outline:1px solid var(--amber);outline-offset:2px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="wrap row">
+      <div class="brand"><b>飆股 TERMINAL</b><span class="sub">Momentum Desk · LIVE</span></div>
+      <div class="spacer"></div>
+      <div class="stat"><span class="led" id="feedled"></span><span id="feedstate">CONNECTING…</span></div>
+      <div class="stat"><span class="led" id="mktled"></span><span id="mktstate">MKT</span></div>
+      <div class="stat" id="clock">--:--:--</div>
+    </div>
+    <nav class="fkeys wrap" style="max-width:1500px" id="fkeys">
+      <button class="fk active" data-tab="over"><b>F1</b>總覽</button>
+      <button class="fk" data-tab="watch"><b>F2</b>觀察清單</button>
+      <button class="fk" data-tab="theme"><b>F3</b>題材</button>
+      <button class="fk" data-tab="macro"><b>F4</b>總經</button>
+      <button class="fk" data-tab="agents"><b>F5</b>AGENTS</button>
+      <button class="fk" data-tab="alerts"><b>F6</b>警報</button>
+      <button class="fk" data-tab="risk"><b>F7</b>風控</button>
+    </nav>
+  </header>
+  <div class="tape"><div class="track" id="tape"></div></div>
+  <main class="wrap">
+    <div class="grid">
+      <div class="col">
+        <section class="panel" data-view="over macro">
+          <div class="phead"><span class="dot"></span><h2>Market Overview</h2><span class="tag" id="idxtag">US ETF</span></div>
+          <div class="pbody tight" id="indices"></div>
+        </section>
+        <section class="panel" data-view="over macro">
+          <div class="phead"><span class="dot"></span><h2>Macro / Fed</h2><span class="tag">RATES</span></div>
+          <div class="pbody"><div class="kv" id="macrokv"></div><div class="divider"></div><div class="muted" style="font-size:11px" id="macronote"></div></div>
+        </section>
+      </div>
+      <div class="col">
+        <section class="panel" data-view="over watch">
+          <div class="phead"><span class="dot"></span><h2>Watchlist · 品質動能</h2><span class="tag">TREND TEMPLATE ✓</span></div>
+          <div class="pbody tight" style="overflow-x:auto"><table id="watchtbl"><thead><tr><th>Symbol</th><th>Last</th><th>Chg%</th><th>5D</th><th>Mkt Cap</th><th>P/E</th><th>Rev YoY</th></tr></thead><tbody></tbody></table></div>
+        </section>
+        <section class="panel" data-view="over theme">
+          <div class="phead"><span class="dot"></span><h2>Theme Monitor</h2><span class="tag">CATALYST</span></div>
+          <div class="pbody tight" id="themes"></div>
+        </section>
+      </div>
+      <div class="col">
+        <section class="panel" data-view="over agents">
+          <div class="phead"><span class="dot"></span><h2>Agent Fleet</h2><span class="tag" id="agcount"></span></div>
+          <div class="pbody tight"><div class="agrid" id="agents"></div></div>
+        </section>
+        <section class="panel" data-view="over alerts">
+          <div class="phead"><span class="dot"></span><h2>Alert Feed</h2><span class="tag">QUEUE</span></div>
+          <div class="pbody tight" id="alerts"></div>
+        </section>
+        <section class="panel" data-view="over risk">
+          <div class="phead"><span class="dot"></span><h2>Risk / Sizing</h2><span class="tag">CAP $100K · 1%</span></div>
+          <div class="pbody tight" style="overflow-x:auto"><table id="risktbl"><thead><tr><th>Sym</th><th>Entry</th><th>Stop</th><th>Shares</th><th>Wt%</th><th>R:R</th></tr></thead><tbody></tbody></table></div>
+        </section>
+      </div>
+    </div>
+    <div class="note" id="footnote"></div>
+  </main>
+</div>
+<div id="console" class="hidden"><span class="close" onclick="document.getElementById('console').classList.add('hidden')">✕ ESC</span><div id="consolebody"></div></div>
+<div class="cmdbar">
+  <div class="cmdline"><span class="ps">飆股›</span><input id="cmd" placeholder="HELP · SCAN · THEME · MACRO · AGENTS · RISK · <代號>" autocomplete="off" aria-label="command"><span class="cur"></span></div>
+  <div class="cmdhint"><b>指令:</b> HELP SCAN THEME MACRO AGENTS RISK BRIEF · &lt;代號&gt; &nbsp;|&nbsp; <b>F1–F7</b> 切換</div>
+</div>
+<script>
+let QUOTES={}, ASOF="—", FEED="rest";
+const IDX=[{s:"SPY",nm:"S&P 500 · SPY"},{s:"QQQ",nm:"NASDAQ · QQQ"},{s:"DIA",nm:"DOW · DIA"}];
+const IDX_STATIC=[{nm:"US 10Y",px:"4.96%",ch:-0.04,raw:true},{nm:"BTC",px:"$87,000",ch:2.0,txt:true}];
+const macro=[["Fed 目標利率","3.75–4.00%"],["9/16 決議","升息 +25bp"],["下次 FOMC","10/27–28"],["10Y 殖利率","4.96%（近 5%）"],["風向","偏鷹 / 利率逆風"]];
+const macronote="偏鷹＋高殖利率環境對高本益比/未獲利股不利 → 部位宜縮小。";
+const WATCH=[
+  {s:"ALAB",n:"Astera Labs",cap:"59.1B",pe:"168",rev:"+98%",sp:[300,296,305,299,312,308,321,318,330,341]},
+  {s:"DOCN",n:"DigitalOcean",cap:"17.2B",pe:"70",rev:"+21%",sp:[118,121,119,126,124,131,130,138,140,146]},
+  {s:"RMBS",n:"Rambus",cap:"10.5B",pe:"44",rev:"+17%",sp:[80,82,79,84,86,88,87,90,88,97]},
+  {s:"CRDO",n:"Credo Tech",cap:"35.2B",pe:"66",rev:"+165%",sp:[176,168,172,165,170,178,175,182,180,187]},
+  {s:"AKAM",n:"Akamai",cap:"16.9B",pe:"22",rev:"+6%",sp:[104,102,106,105,108,107,110,112,111,117]},
+  {s:"TWLO",n:"Twilio",cap:"40.9B",pe:"46",rev:"+12%",sp:[236,240,238,244,242,250,248,256,258,266]},
+  {s:"MDB",n:"MongoDB",cap:"32.8B",pe:"—",rev:"+22%",sp:[360,372,368,380,376,388,385,398,392,407]},
+];
+const themes=[
+  {t:"🟢 品質動能 (AI/半導體)",lead:"ALAB · CRDO · RMBS · AKAM — 趨勢模板合格",cls:"b-q",tag:"CORE"},
+  {t:"🟡 稀土/關鍵礦產",lead:"格陵蘭安全協議 · MP / CRML — 未獲利，投機",cls:"b-s",tag:"SPEC"},
+  {t:"🔴 仙股噴出",lead:"GRML · GLND — 微型股，迴避",cls:"b-j",tag:"AVOID"},
+  {t:"🟢 加密概念",lead:"MSTR · COIN — BTC $87K 帶動",cls:"b-q",tag:"WATCH"},
+];
+const agents=[["總指揮","STANDBY","ok"],["動能掃描","READY","ok"],["基本面量化","READY","ok"],["催化劑/新聞","SCANNING","warn"],["Fed/總經","READY","ok"],["籌碼 13F","READY","ok"],["財報會議","IDLE","idle"],["風控倉位","READY","ok"],["策略回測","IDLE","idle"],["監控/警報","ARMED","warn"]];
+const alerts=[{t:"LIVE","sev":"lo","m":"Finnhub WebSocket 即時串流 <b class='up'>已連線</b>"},{t:"9/21","sev":"hi","m":"<b class='down'>稀土題材</b> 異常：CRML +38.6%（地緣政治）"},{t:"9/16","sev":"md","m":"FOMC <b class='amber'>升息 +25bp</b>，偏鷹"}];
+const risk=[{s:"ALAB",e:"340.74",st:"315",sh:"38",wt:"12.9",rr:"2.3"},{s:"DOCN",e:"146.16",st:"133",sh:"75",wt:"11.0",rr:"2.2"},{s:"RMBS",e:"96.96",st:"88",sh:"111",wt:"10.8",rr:"5.7"}];
+
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const sign=n=>n>0?"+":"",kls=n=>n>0?"up":n<0?"down":"flat",arrow=n=>n>0?"▲":n<0?"▼":"■";
+const q=s=>QUOTES[s]||{c:0,dp:0};
+function spark(data){const w=64,h=22,p=2,mn=Math.min(...data),mx=Math.max(...data),rg=(mx-mn)||1;
+  const pts=data.map((v,i)=>[p+i*(w-2*p)/(data.length-1),h-p-(v-mn)/rg*(h-2*p)]);
+  const d=pts.map((q,i)=>(i?"L":"M")+q[0].toFixed(1)+" "+q[1].toFixed(1)).join(" ");
+  const up=data[data.length-1]>=data[0],c=up?"var(--up)":"var(--down)",l=pts[pts.length-1];
+  const a=`M${pts[0][0]} ${h-p} `+pts.map(q=>`L${q[0].toFixed(1)} ${q[1].toFixed(1)}`).join(" ")+` L${l[0]} ${h-p} Z`;
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}"><path d="${a}" fill="${c}" opacity=".1"/><path d="${d}" fill="none" stroke="${c}" stroke-width="1.4" stroke-linejoin="round"/><circle cx="${l[0].toFixed(1)}" cy="${l[1].toFixed(1)}" r="1.9" fill="${c}"/></svg>`;}
+const fmtCh=(dp,raw)=>`${arrow(dp)} ${sign(dp)}${(+dp).toFixed(2)}${raw?"":"%"}`;
+function renderIndices(){let h=IDX.map(x=>{const d=q(x.s);return `<div class="idx"><div class="nm">${x.nm}</div><div class="vv"><div class="px" id="ipx-${x.s}">${d.c.toFixed(2)}</div><div class="ch ${kls(d.dp)}">${fmtCh(d.dp)}</div></div></div>`;}).join("");
+  h+=IDX_STATIC.map(x=>`<div class="idx"><div class="nm">${x.nm}</div><div class="vv"><div class="px">${x.px}</div><div class="ch ${kls(x.ch)}">${x.txt?(x.ch>0?"▲ 強":"▼ 弱"):fmtCh(x.ch,x.raw)}</div></div></div>`).join("");
+  $("#indices").innerHTML=h;}
+function renderWatch(){$("#watchtbl tbody").innerHTML=WATCH.map(x=>{const d=q(x.s);return `<tr id="row-${x.s}"><td class="sym"><b>${x.s}</b><small>${x.n}</small></td><td>${d.c.toFixed(2)}</td><td class="${kls(d.dp)}">${fmtCh(d.dp)}</td><td>${spark(x.sp)}</td><td class="muted">${x.cap}</td><td class="muted">${x.pe}</td><td class="up">${x.rev}</td></tr>`;}).join("");}
+function renderTape(){const ss=["SPY","QQQ","ALAB","DOCN","RMBS","CRDO","AKAM","TWLO","MDB","MP","CRML"];
+  const one=ss.map(s=>{const d=q(s);return `<span class="tk"><span class="sym">${s}</span><span class="${kls(d.dp)}">${d.c.toFixed(2)} ${arrow(d.dp)}${sign(d.dp)}${(+d.dp).toFixed(2)}%</span></span>`;}).join("");
+  $("#tape").innerHTML=one+one;}
+function renderStatic(){
+  $("#macrokv").innerHTML=macro.map(([k,v])=>`<div class="k">${k}</div><div class="v">${v}</div>`).join("");
+  $("#macronote").textContent=macronote;
+  $("#themes").innerHTML=themes.map(t=>`<div class="theme-row"><span class="badge ${t.cls}">${t.tag}</span><span class="lead"><b style="color:var(--ink)">${t.t}</b> — <span class="muted">${t.lead}</span></span></div>`).join("");
+  $("#agcount").textContent=agents.length+" ONLINE";
+  $("#agents").innerHTML=agents.map(([n,s,st])=>`<div class="ag"><div class="an"><span class="mini-led ${st==='ok'?'':st}"></span>${n}</div><div class="as">${s}</div></div>`).join("");
+  $("#alerts").innerHTML=alerts.map(a=>`<div class="alert"><span class="sev ${a.sev}"></span><span class="t">${a.t}</span><span class="m">${a.m}</span></div>`).join("");
+  $("#risktbl tbody").innerHTML=risk.map(x=>`<tr><td class="sym"><b>${x.s}</b></td><td>${x.e}</td><td class="down">${x.st}</td><td>${x.sh}</td><td class="muted">${x.wt}%</td><td class="up">${x.rr}:1</td></tr>`).join("");
+}
+function renderLive(){renderIndices();renderWatch();renderTape();
+  $("#footnote").innerHTML=`資料：Finnhub ${FEED==="live"?"WebSocket 即時串流":"REST 快照"} · 更新 ${ASOF}。指數以 SPY/QQQ/DIA ETF 代理；10Y、BTC 靜態。<br>⚠️ 教育／資訊用途，非投資建議。下單前自行查證。`;}
+function flash(sym,dir){const el=$("#row-"+sym);if(!el)return;el.classList.remove("flash-up","flash-dn");void el.offsetWidth;el.classList.add(dir>0?"flash-up":"flash-dn");}
+
+function applyQuotes(nq){for(const k in nq){const old=QUOTES[k]?.c;QUOTES[k]=nq[k];if(old!=null&&nq[k].c!==old)flash(k,nq[k].c-old);}renderLive();}
+
+/* ---- data layer: REST seed + WebSocket live ---- */
+async function seed(){try{const r=await fetch("/api/quotes");const d=await r.json();QUOTES=d.q||{};ASOF=fmtTime(d.asof);FEED=d.feed;setFeed(d.feed);renderLive();}catch(e){}}
+function connectWS(){
+  const proto=location.protocol==="https:"?"wss":"ws";
+  const ws=new WebSocket(`${proto}://${location.host}/ws`);
+  ws.onopen=()=>setFeed("live");
+  ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data);}catch{return;}if(m.q){FEED=m.feed||FEED;ASOF=fmtTime(m.asof);setFeed(m.feed);applyQuotes(m.q);}};
+  ws.onclose=()=>{setFeed("down");setTimeout(connectWS,4000);};
+  ws.onerror=()=>{try{ws.close();}catch{}};
+}
+function setFeed(f){const led=$("#feedled"),st=$("#feedstate");
+  if(f==="live"){led.className="led on";st.textContent="LIVE · FINNHUB WS";}
+  else if(f==="rest"){led.className="led warn";st.textContent="REST 快照";}
+  else{led.className="led";st.textContent="RECONNECTING…";}}
+function fmtTime(iso){try{return new Date(iso).toLocaleTimeString("en-GB",{timeZone:"Asia/Taipei"})+" TPE";}catch{return iso||"—";}}
+
+/* ---- tabs / clock / cmd ---- */
+function setTab(t){$$(".fk").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));const o=t==="over";$$(".panel").forEach(p=>{const v=(p.dataset.view||"").split(" ");p.classList.toggle("hidden",!(o||v.includes(t)));});window.scrollTo({top:0,behavior:"smooth"});}
+$("#fkeys").addEventListener("click",e=>{const b=e.target.closest(".fk");if(b)setTab(b.dataset.tab);});
+document.addEventListener("keydown",e=>{const m={F1:"over",F2:"watch",F3:"theme",F4:"macro",F5:"agents",F6:"alerts",F7:"risk"};if(m[e.key]){e.preventDefault();setTab(m[e.key]);}if(e.key==="Escape")$("#console").classList.add("hidden");});
+function tick(){const n=new Date();$("#clock").textContent=n.toLocaleTimeString("en-GB",{timeZone:"Asia/Taipei"})+" TPE";const h=+n.toLocaleString("en-GB",{timeZone:"Asia/Taipei",hour:"2-digit",hour12:false}).slice(0,2);const open=(h>=21)||(h<4);$("#mktled").className="led"+(open?" on":" warn");$("#mktstate").textContent=open?"MKT OPEN":"MKT CLOSED";}
+const cmds={HELP:()=>["指令","SCAN THEME MACRO AGENTS RISK BRIEF · <代號> · F1–F7"],
+  SCAN:()=>{setTab("watch");return["SCAN",WATCH.map(x=>{const d=q(x.s);return `${x.s.padEnd(6)} ${d.c.toFixed(2).padStart(8)} ${sign(d.dp)}${(+d.dp).toFixed(2)}%  ${x.cap} Rev ${x.rev}`;}).join("\n")];},
+  THEME:()=>{setTab("theme");return["THEME",themes.map(t=>`${t.tag} ${t.t}\n  ${t.lead}`).join("\n\n")];},
+  MACRO:()=>{setTab("macro");return["MACRO",macro.map(m=>`${m[0].padEnd(10)} ${m[1]}`).join("\n")+"\n\n"+macronote];},
+  AGENTS:()=>{setTab("agents");return["AGENTS",agents.map(a=>`● ${a[0].padEnd(10)} ${a[1]}`).join("\n")];},
+  RISK:()=>{setTab("risk");return["RISK $100K/1%",risk.map(r=>`${r.s.padEnd(6)} 進${r.e} 停${r.st} ${r.sh}股 ${r.wt}% R:R ${r.rr}`).join("\n")];},
+  BRIEF:()=>["簡報","ALAB/DOCN/RMBS 趨勢模板合格；稀土題材投機；Fed 偏鷹，嚴設停損。"]};
+function runCmd(raw){const s=raw.trim().toUpperCase();if(!s)return;let o;if(cmds[s])o=cmds[s]();else if(QUOTES[s]){const d=q(s),w=WATCH.find(x=>x.s===s);o=[`${s}${w?" · "+w.n:""}`,`Last ${d.c.toFixed(2)} (${sign(d.dp)}${(+d.dp).toFixed(2)}%)`+(w?`\n${w.cap} P/E ${w.pe} Rev ${w.rev}`:"")];}else o=[`UNKNOWN: ${s}`,"HELP 查看指令"];
+  $("#consolebody").innerHTML=`<div class="ch">▍ ${o[0]}</div><div class="cl">${o[1].replace(/</g,"&lt;")}</div>`;$("#console").classList.remove("hidden");}
+$("#cmd").addEventListener("keydown",e=>{if(e.key==="Enter"){runCmd(e.target.value);e.target.value="";}});
+
+renderStatic();renderLive();tick();setInterval(tick,1000);seed().then(connectWS);
+</script>
+</body>
+</html>
