@@ -226,7 +226,6 @@ function renderStatic(){
   $("#themes").innerHTML=themes.map(t=>`<div class="theme-row"><span class="badge ${t.cls}">${t.tag}</span><span class="lead"><b style="color:var(--ink)">${t.t}</b> — <span class="muted">${t.lead}</span></span></div>`).join("");
   $("#agcount").textContent=agents.length+" ONLINE";
   $("#agents").innerHTML=agents.map(([n,s,st])=>`<div class="ag"><div class="an"><span class="mini-led ${st==='ok'?'':st}"></span>${n}</div><div class="as">${s}</div></div>`).join("");
-  $("#alerts").innerHTML=alerts.map(a=>`<div class="alert"><span class="sev ${a.sev}"></span><span class="t">${a.t}</span><span class="m">${a.m}</span></div>`).join("");
   $("#risktbl tbody").innerHTML=risk.map(x=>`<tr><td class="sym"><b>${x.s}</b></td><td>${x.e}</td><td class="down">${x.st}</td><td>${x.sh}</td><td class="muted">${x.wt}%</td><td class="up">${x.rr}:1</td></tr>`).join("");
   renderNews();
 }
