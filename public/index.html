@@ -90,6 +90,12 @@
   .alert:last-child{border-bottom:0}.alert .t{color:var(--dim);font-size:10px;flex:0 0 42px}.alert .m{flex:1;min-width:0}
   .sev{width:3px;align-self:stretch;border-radius:2px;background:var(--muted)}
   .sev.hi{background:var(--down)}.sev.md{background:var(--amber)}.sev.lo{background:var(--cyan)}
+  .nitem{padding:7px 10px;border-bottom:1px solid #101a25;font-size:11px}
+  .nitem:last-child{border-bottom:0}
+  .nitem a{color:var(--ink);text-decoration:none;display:block;line-height:1.35}
+  .nitem a:hover{color:var(--amber2)}
+  .nitem .meta{color:var(--dim);font-size:9.5px;margin-top:3px;letter-spacing:.3px}
+  .nempty{padding:14px 10px;color:var(--muted);font-size:11px}
   .cmdbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#070a0f;border-top:1px solid var(--border2);padding:0 0 env(safe-area-inset-bottom,0px)}
   .cmdline{display:flex;align-items:center;gap:8px;max-width:1500px;margin:0 auto;padding:9px 12px}
   .cmdline .ps{color:var(--amber);font-weight:600}
@@ -122,7 +128,7 @@
       <button class="fk" data-tab="theme"><b>F3</b>題材</button>
       <button class="fk" data-tab="macro"><b>F4</b>總經</button>
       <button class="fk" data-tab="agents"><b>F5</b>AGENTS</button>
-      <button class="fk" data-tab="alerts"><b>F6</b>警報</button>
+      <button class="fk" data-tab="alerts"><b>F6</b>新聞</button>
       <button class="fk" data-tab="risk"><b>F7</b>風控</button>
     </nav>
   </header>
@@ -155,8 +161,8 @@
           <div class="pbody tight"><div class="agrid" id="agents"></div></div>
         </section>
         <section class="panel" data-view="over alerts">
-          <div class="phead"><span class="dot"></span><h2>Alert Feed</h2><span class="tag">QUEUE</span></div>
-          <div class="pbody tight" id="alerts"></div>
+          <div class="phead"><span class="dot"></span><h2>News · Yahoo Finance</h2><span class="tag" id="newstag">YAHOO</span></div>
+          <div class="pbody tight" id="news"></div>
         </section>
         <section class="panel" data-view="over risk">
           <div class="phead"><span class="dot"></span><h2>Risk / Sizing</h2><span class="tag">CAP $100K · 1%</span></div>
@@ -173,7 +179,7 @@
   <div class="cmdhint"><b>指令:</b> HELP SCAN THEME MACRO AGENTS RISK BRIEF · &lt;代號&gt; &nbsp;|&nbsp; <b>F1–F7</b> 切換</div>
 </div>
 <script>
-let QUOTES={}, ASOF="—", FEED="rest";
+let QUOTES={}, ASOF="—", FEED="rest", NEWS=[], NEWSSRC="yahoo";
 const IDX=[{s:"SPY",nm:"S&P 500 · SPY"},{s:"QQQ",nm:"NASDAQ · QQQ"},{s:"DIA",nm:"DOW · DIA"}];
 const IDX_STATIC=[{nm:"US 10Y",px:"4.96%",ch:-0.04,raw:true},{nm:"BTC",px:"$87,000",ch:2.0,txt:true}];
 const macro=[["Fed 目標利率","3.75–4.00%"],["9/16 決議","升息 +25bp"],["下次 FOMC","10/27–28"],["10Y 殖利率","4.96%（近 5%）"],["風向","偏鷹 / 利率逆風"]];
@@ -222,6 +228,15 @@ function renderStatic(){
   $("#agents").innerHTML=agents.map(([n,s,st])=>`<div class="ag"><div class="an"><span class="mini-led ${st==='ok'?'':st}"></span>${n}</div><div class="as">${s}</div></div>`).join("");
   $("#alerts").innerHTML=alerts.map(a=>`<div class="alert"><span class="sev ${a.sev}"></span><span class="t">${a.t}</span><span class="m">${a.m}</span></div>`).join("");
   $("#risktbl tbody").innerHTML=risk.map(x=>`<tr><td class="sym"><b>${x.s}</b></td><td>${x.e}</td><td class="down">${x.st}</td><td>${x.sh}</td><td class="muted">${x.wt}%</td><td class="up">${x.rr}:1</td></tr>`).join("");
+  renderNews();
+}
+function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function relTime(t){const d=new Date(t);if(isNaN(d))return esc(t||"");const s=(Date.now()-d)/1000;if(s<60)return "剛剛";if(s<3600)return Math.floor(s/60)+" 分前";if(s<86400)return Math.floor(s/3600)+" 小時前";return Math.floor(s/86400)+" 天前";}
+function renderNews(){
+  const el=$("#news"); if(!el)return;
+  const tag=$("#newstag"); if(tag)tag.textContent=NEWSSRC==="finnhub"?"FINNHUB":"YAHOO";
+  if(!NEWS.length){el.innerHTML=`<div class="nempty">載入新聞中…</div>`;return;}
+  el.innerHTML=NEWS.map(n=>`<div class="nitem"><a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(n.title)}</a><div class="meta">${esc(n.source||"Yahoo Finance")} · ${relTime(n.time)}</div></div>`).join("");
 }
 function renderLive(){renderIndices();renderWatch();renderTape();
   $("#footnote").innerHTML=`資料：Finnhub ${FEED==="live"?"WebSocket 即時串流":"REST 快照"} · 更新 ${ASOF}。指數以 SPY/QQQ/DIA ETF 代理；10Y、BTC 靜態。<br>⚠️ 教育／資訊用途，非投資建議。下單前自行查證。`;}
@@ -230,12 +245,17 @@ function flash(sym,dir){const el=$("#row-"+sym);if(!el)return;el.classList.remov
 function applyQuotes(nq){for(const k in nq){const old=QUOTES[k]?.c;QUOTES[k]=nq[k];if(old!=null&&nq[k].c!==old)flash(k,nq[k].c-old);}renderLive();}
 
 /* ---- data layer: REST seed + WebSocket live ---- */
-async function seed(){try{const r=await fetch("/api/quotes");const d=await r.json();QUOTES=d.q||{};ASOF=fmtTime(d.asof);FEED=d.feed;setFeed(d.feed);renderLive();}catch(e){}}
+async function seed(){
+  try{const r=await fetch("/api/quotes");const d=await r.json();QUOTES=d.q||{};ASOF=fmtTime(d.asof);FEED=d.feed;setFeed(d.feed);renderLive();}catch(e){}
+  try{const r=await fetch("/api/news");const d=await r.json();if(d.news){NEWS=d.news;NEWSSRC=d.newsSrc||NEWSSRC;renderNews();}}catch(e){}
+}
 function connectWS(){
   const proto=location.protocol==="https:"?"wss":"ws";
   const ws=new WebSocket(`${proto}://${location.host}/ws`);
   ws.onopen=()=>setFeed("live");
-  ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data);}catch{return;}if(m.q){FEED=m.feed||FEED;ASOF=fmtTime(m.asof);setFeed(m.feed);applyQuotes(m.q);}};
+  ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data);}catch{return;}
+    if(m.q){FEED=m.feed||FEED;ASOF=fmtTime(m.asof);setFeed(m.feed);applyQuotes(m.q);}
+    if(m.news){NEWS=m.news;NEWSSRC=m.newsSrc||NEWSSRC;renderNews();}};
   ws.onclose=()=>{setFeed("down");setTimeout(connectWS,4000);};
   ws.onerror=()=>{try{ws.close();}catch{}};
 }
